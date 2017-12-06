@@ -9,7 +9,7 @@ import pandas as pd
 html = urlopen('https://www.gismeteo.ru/weather-zelenograd-11443/10-days/')
 
 
-class GisMeteoScraper:
+class GisMeteoInfoScraper:
     def __init__(self, page):
         self.t_max_values = []
         self.t_min_values = []
@@ -75,6 +75,10 @@ class GisMeteoScraper:
             return False
 
 
+class GisMeteoScraperApi:
+    pass
+
+
 if __name__ == '__main__':
-    c = GisMeteoScraper('https://www.gismeteo.ru/weather-zelenograd-11443/10-days/')
+    c = GisMeteoInfoScraper('https://www.gismeteo.ru/weather-zelenograd-11443/10-days/')
     c.start()
