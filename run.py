@@ -1,12 +1,11 @@
-# -*- coding: utf-8 -*-
-
 __author__ = 'Boris Polyanskiy'
 
+from sys import stderr
 from urllib.request import urlopen
-from bs4 import BeautifulSoup
-import pandas as pd
+from urllib.error import HTTPError, URLError
 
-html = urlopen('https://www.gismeteo.ru/weather-zelenograd-11443/10-days/')
+from bs4 import BeautifulSoup
+from pandas import DataFrame
 
 
 class GisMeteoInfoScraper:
@@ -23,10 +22,11 @@ class GisMeteoInfoScraper:
         self.page_url = page
         self.html = None
 
-    def start(self):
+    def scrape(self):
         html = self._get_page_content(self.page_url)
         if not html:
-            return
+            stderr.write('Invalid url: %s' % self.page_url)
+            return True
         else:
             self.html = html
         bs = BeautifulSoup(self.html, 'html.parser')
@@ -39,7 +39,7 @@ class GisMeteoInfoScraper:
         self.wind_force = [unit.string for unit in bs.find_all(class_='js_value val_to_convert')]
         self.wind_max_force = [unit.attrs['data-value'] for unit in bs.find_all(class_='w_wind__value widget__value')]
         self.weather_day = [unit.string.strip() for unit in bs.find_all(class_='w_date__date')][:10]
-        weather = pd.DataFrame(
+        weather = DataFrame(
             {
                 "period": self.weather_day,
                 "short desc": self.weather_labels,
@@ -55,6 +55,7 @@ class GisMeteoInfoScraper:
         print(weather)
         with open('out.html', 'w', encoding='utf-8') as f:
             f.write(weather.to_html(index=False))
+        return False
 
     @staticmethod
     def get_attr_by_parent(units, parent_name, *attr):
@@ -68,17 +69,13 @@ class GisMeteoInfoScraper:
 
     @staticmethod
     def _get_page_content(page):
-        html = urlopen(page)
-        if html.getcode() == 200:
+        try:
+            html = urlopen(page)
             return html
-        else:
-            return False
-
-
-class GisMeteoScraperApi:
-    pass
+        except (HTTPError, URLError):
+            return
 
 
 if __name__ == '__main__':
-    c = GisMeteoInfoScraper('https://www.gismeteo.ru/weather-zelenograd-11443/10-days/')
-    c.start()
+    scraper = GisMeteoInfoScraper('https://www.gismaeteo.ru/weather-zelenograd-11443/10-days/')
+    exit(int(scraper.scrape()))
